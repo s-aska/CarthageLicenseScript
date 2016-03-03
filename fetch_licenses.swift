@@ -38,27 +38,29 @@ struct CartfileEntry: CustomStringConvertible {
         var license = ""
         let urls = licenseURLStrings.map({ NSURL(string: $0)! })
         print("Fetching licenses for \(name) ...")
+        let semaphore = dispatch_semaphore_create(0)
         for url in urls {
-            let semaphore = dispatch_semaphore_create(0)
-
             let request = NSURLRequest(URL: url)
             let task = NSURLSession.sharedSession().dataTaskWithRequest(request, completionHandler: { (data, response, error) -> Void in
-                dispatch_semaphore_signal(semaphore)
                 if let response = response as? NSHTTPURLResponse {
                     if response.statusCode == 404 {
+                        dispatch_semaphore_signal(semaphore)
                         return
                     }
                 }
 
                 let string = NSString(data: data!, encoding: NSUTF8StringEncoding)
-                if let string = string {
-                    license = string as String
+                if let string = string as? String where(!string.isEmpty) {
+                    license = string
                 }
+                dispatch_semaphore_signal(semaphore)
             })
             task.resume()
             dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+            if !license.isEmpty {
+                break
+            }
         }
-
         return license
     }
 }

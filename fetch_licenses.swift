@@ -31,7 +31,7 @@ struct CartfileEntry: CustomStringConvertible {
     }
 
     var licenseURLStrings: [String] {
-        return ["Source/License.txt", "License.md", "LICENSE.md", "LICENSE", "License.txt"].map { "https://github.com/\(self.name)/raw/\(self.version)/\($0)" }
+        return ["Source/License.txt", "License.md", "LICENSE.md", "LICENSE", "License.txt", "LICENSE.txt"].map { "https://github.com/\(self.name)/raw/\(self.version)/\($0)" }
     }
 
     func fetchLicense(outputDir: String) -> String {
@@ -70,9 +70,10 @@ if Process.arguments.count == 3 {
     do {
         let content = try loadResolvedCartfile(resolvedCartfile)
         let entries = parseResolvedCartfile(content)
-        let licenses = entries.map { ["title": $0.projectName, "text": $0.fetchLicense(outputDirectory)] }
+        let licenses = entries.map { ["Type": "PSGroupSpecifier", "Title": $0.projectName, "FooterText": $0.fetchLicense(outputDirectory)] }
         let fileName = (outputDirectory as NSString).stringByAppendingPathComponent("Licenses.plist")
-        (licenses as NSArray).writeToFile(fileName, atomically: true)
+        let data = ["PreferenceSpecifiers": licenses]
+        (data as NSDictionary).writeToFile(fileName, atomically: true)
         print("Super awesome! Your licenses are at \(fileName) 🍻")
     } catch {
         print(error)
